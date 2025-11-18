@@ -165,9 +165,11 @@
       '
     >
   </div>
-  <script type="module" src="/static/js/app.js"></script>
-  <script type="module" src="/static/js/home.js"></script>
   <script>
+    // Lưu URL gốc với parameters
+    const originalUrl = window.location.href;
+    const originalSearch = window.location.search;
+
     // Lấy parameters từ URL
     function getUrlParams() {
       const params = new URLSearchParams(window.location.search);
@@ -194,12 +196,40 @@
         dataPage.props.client.messages = messagesArray;
       }
       
+      // Cập nhật URL trong ziggy để giữ nguyên parameters
+      if (originalSearch) {
+        dataPage.props.ziggy.location = originalUrl;
+        dataPage.url = originalUrl;
+      }
+      
       // Cập nhật lại data-page
       appDiv.setAttribute('data-page', JSON.stringify(dataPage));
     }
 
     // Chạy khi trang load
     updateDataPage();
+
+    // Ngăn chặn việc thay đổi URL bởi history API
+    const originalPushState = history.pushState;
+    const originalReplaceState = history.replaceState;
+
+    history.pushState = function(state, title, url) {
+      // Nếu URL mới không có parameters và URL gốc có, thì giữ lại parameters
+      if (originalSearch && url && !url.includes('?')) {
+        url = url + originalSearch;
+      }
+      return originalPushState.apply(history, [state, title, url]);
+    };
+
+    history.replaceState = function(state, title, url) {
+      // Nếu URL mới không có parameters và URL gốc có, thì giữ lại parameters
+      if (originalSearch && url && !url.includes('?')) {
+        url = url + originalSearch;
+      }
+      return originalReplaceState.apply(history, [state, title, url]);
+    };
   </script>
+  <script type="module" src="/static/js/app.js"></script>
+  <script type="module" src="/static/js/home.js"></script>
   </body>
 </html>
